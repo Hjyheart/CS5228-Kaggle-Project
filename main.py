@@ -539,8 +539,8 @@ def model_preprocessing(input_df):
 
     return input_df
 
-train_df = pd.read_csv(r"./data/train.csv")
-test_df = pd.read_csv(r"./data/test.csv")
+train_df = pd.read_csv(r"./train.csv")
+test_df = pd.read_csv(r"./test.csv")
 
 ####################### basic data definitions ######################
 #####################################################################
@@ -656,4 +656,4 @@ xbg_model = xgboost.XGBRegressor(random_state           = 888888,
 xbg_model.fit(train_df[feature_list], train_df[target])
 submission_df = pd.DataFrame(xbg_model.predict(test_df[feature_list])).reset_index().rename(columns = {'index':"Id", 0:'Predicted'})
 submission_df['Predicted'] = round(submission_df['Predicted'])
-submission_df
+submission_df.to_csv(r"./data/submission.csv", index = False)
