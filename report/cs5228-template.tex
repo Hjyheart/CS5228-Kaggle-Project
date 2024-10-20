@@ -46,8 +46,8 @@ Introduction.
 Motivate and outline the goals and questions you address. Why is this work important, what are the challenges, will benefits from the results. In short, what problem are you trying to solve? For example, simply aiming for a top rank on Kaggle is not a sufficient motivation :).
 
 % Section 2: Data Preparation
-\section{Data Preparation}
-\label{sec:data_preparation}
+\section{Data Exploration}
+\label{sec:data_exploration}
 In this section, we explain the data preparation process, including checking data quality, exploring the data, and preprocessing it for modeling.
 
 \subsection{Understanding the Data}
@@ -96,29 +96,108 @@ In this dataset, significant missing values were identified across various featu
     \item \textbf{Other Attributes}: Several other fields exhibit varying degrees of missing data, ranging from 0.03\% to 15.25\%. 
 \end{itemize}
 
+Basic sanity check conducted on date type columns. There are no future dates found in year, original\_reg\_date and reg\_date. Dates for reg\_date are consistent as well with no reg\_date being earlier than original\_reg\_date.
 {\small Evaluate the quality of the data by checking for missing values, inconsistencies, duplicates, and outliers. Discuss how you addressed any issues related to data completeness and correctness.}
 
+\subsection{Initial Feature Engineering for EDA}
+\label{subsec:feature_engineering}
+\subsubsection{Binary Variable Creation}
+\begin{itemize}
+    \item \textbf{OPC Scheme} Most of the values are missing. Assuming that NA values means that the listed car is not under the OPC scheme, this column is transformed to a binary form where 1 indicates the presence of an OPC scheme and 0 indicates its absence.
+    
+    \item \textbf{Parf} Based on the background context, we know that PARF cars usually have a higher resale price than COE cars. This information can be extracted from the category column under the 'parf cars' and 'coe cars' labels. 1 signifies that the car is cateogrised as PARF and 0 otherwise.
+    
+    \item \textbf{Rare} Similar to PARF, rarity of the car can be extracted from the category column under the label 'rare \& exotic'. 1 signifies that the car is labelled as rare and 0 otherwise.
+    
+    \item \textbf{Vintage} Similar to PARF, the vintage nature of the car can be extracted from the category column under the label 'vintage cars'. 1 signifies that the car is labelled as vintage and 0 otherwise.
+    
+\end{itemize}
+
+\subsubsection{Remaining Age}
+One of the key features we derived during the feature engineering process is the "AGE-remaining" column, which quantifies the remaining lifespan of a vehicle's Certificate of Entitlement (COE). This feature is particularly important in the context of the Singapore car resale market, as the COE directly impacts the vehicle's resale value.
+
+COE information is extracted from the title column. Specifically, we looked for instances where the title contains the term "COE" and extracted the relevant date from the title. 
+For vehicles without explicit COE dates in the title, we utilized the maximum of the original\_reg\_date and reg\_date columns to estimate the end date of the COE. By adding 10 years to this maximum date, we derived the COE end date for those vehicles.
+Using the derived COE end date, we computed the "AGE-remaining" column. This was accomplished by finding the difference in years between the current date and the COE end date. 
 \subsection{Exploratory Data Analysis (EDA)}
 \label{subsec:eda}
-Perform an initial exploratory analysis to understand the distribution of data and relationships between key variables. This may include descriptive statistics, visualizations (e.g., histograms, scatter plots), and identifying trends or patterns.
+{\small Perform an initial exploratory analysis to understand the distribution of data and relationships between key variables. This may include descriptive statistics, visualizations (e.g., histograms, scatter plots), and identifying trends or patterns.}
 
-\subsection{Data Preprocessing}
+\textbf{Type of Vehicle} SUVs, luxury sedans, and sports cars are the most common vehicle types in the dataset. SUVs are highly represented, with relatively lower price variability compared to luxury sedans and sports cars.
+
+\textbf{Fuel Type} The most common fuel type is diesel, followed by petrol-electric and petrol.
+Petrol-electric vehicles also show a significant range in pricing, with some outliers that could represent premium models. This suggests that hybrid vehicles are valued well in the resale market.
+Electric vehicles have a narrower price range compared to diesel and petrol-electric, suggesting that the market for used electric vehicles may not be as established yet, potentially affecting their resale value.
+
+\textbf{PARF} cars have a slightly higher range compared to coe cars. \text{Rare} cars can command much higher resale prices.
+\subsubsection{Feature Correlation}
+
+The correlation matrix reveals several significant relationships among the various features in the dataset. 
+
+Firstly, there are strong positive correlations observed between power and engine capacity, with a correlation coefficient of \textbf{0.87}. This indicates that vehicles with larger engine capacities tend to exhibit higher power outputs. To leverage this relationship, future analyses could benefit from creating a power-to-weight ratio feature, which may provide additional insights into vehicle performance.
+
+A high correlation of \textbf{0.95} between road tax and engine capacity suggests that vehicles with larger engines incur higher road tax. This relationship implies that including engine capacity as a feature in price prediction models is crucial, especially for regulatory considerations. 
+
+There is a strong positive correlation of \textbf{0.81} between depreciation and price, indicating that vehicles with higher prices typically experience lower depreciation rates. This relationship suggests that enhancing the model with features capturing vehicle condition or age could improve price predictions.
+
+A very high correlation of \textbf{0.92} between deregistration value and price reinforces our research that higher-priced vehicles often possess higher deregistration values. Incorporating deregistration value as a predictor variable will likely enhance the model's predictive capability.
+
+On the other hand, a negative correlation of \textbf{-0.52} between the number of owners and depreciation suggests that vehicles with more previous owners tend to depreciate more. This finding highlights the importance of considering ownership history as a feature in the model, as it could provide valuable information on expected depreciation.
+
+Additionally, the correlation of \textbf{-0.39} between mileage and price indicates that higher mileage vehicles are generally associated with lower resale prices. Thus, mileage should be treated as a critical variable in the price prediction model, as it could significantly influence resale values.
+
+Moderate correlations also exist, such as the \textbf{0.70} correlation between power and price, which further supports the inclusion of power as a predictor variable in the model. Moreover, the correlation of \textbf{0.60} between curb weight and road tax suggests that heavier vehicles typically incur higher road taxes. This relationship may warrant further investigation into how weight influences pricing and regulatory costs.
+
+The "AGE-remaining" column has a positive correlation of \textbf{0.40} with "price," indicating that vehicles with more time left on their COE tend to maintain higher resale values. This is crucial for potential buyers as a longer COE often equates to less immediate financial obligation.
+
+In contrast, vintage and OPC scheme exhibit low correlations with other numerical features, indicating a lack of strong linear relationships.
+
+Given these insights, future steps should include feature engineering to create interaction terms based on these correlations, as well as investigating multicollinearity among the highly correlated features. 
+
+
+
+\section{Data Preparation}
 \label{subsec:data_preprocessing}
-In this section, you will explain the key preprocessing tasks that were applied to the dataset:
+\subsection{Creating Interaction Terms}
+\textbf{power\_engine} is the interaction term between power and engine\_cap. As mentioned in Feature Correlation subsection, there is strong positive correlations between these two features.
+\begin{equation}
+    \text{power\_engine\_interaction} = \text{power} \times \text{engine\_cap}
+\end{equation}
 
-\subsubsection{Data Cleaning}
+
+\subsection{Data Cleaning}
 Handle missing values, outliers, and any inconsistencies in the dataset. Discuss the strategies used, such as imputing missing values or removing invalid records.
+\subsubsection{Handling Missing Values}
+KNNImpute
+\subsubsection{Handling Outliers}
+We utilize Principal Component Analysis (PCA) to reduce dimensionality, followed by DBSCAN to identify outliers in the dataset.
+The dataset is standardized to ensure all features contribute equally to distance calculations. 
+PCA is applied to the standardised dataset to transform the high-dimendional data to a lower-dimensional representation while preserving as much variance as possible. This is to facilitate the clustering process by reducing complexity.
+NearestNeighbours used to find the k-nearest ditances. The knee point value is used to determine the epsilon for DBSCAN.
+After DBSCAN was run, the data points that are not assigned to any cluster were classified as anomalies. 
 
-\subsubsection{Data Reduction}
+
+There are 57 anomalies found. 57\% of the cars are rare sports cars like ROLLS-ROYCE or FERRARI. Since high performance sports cars have difference price dynamics due to their rarity, brand prestige and demand, it is expected for these data points to be outliers. 
+Interaction terms like power\_engine ratio and the rare should be able to capture these attributes which will help the model understand the price dynamics and recognise their impact on resale prices effetively.
+These outliers labelled as rare will not be removed since it will lead to information loss on rare premium cars with lower frequency counts.
+
+The other outliers consist of points with extremely high values of depreciation above \$500,000 or extremely low prices at around \$38000 for a car with 8 years of AGE-remaining. 
+Since the number of outliers (24) is low, we can safely remove these outlier without losing too much information.
+
+We also remove data points where AGE-remaining is less than 0. This is logically inconsistent because a vehicle cannot be sold if it is no longer operational or has exceeded its regulatory lifespan. 
+Hence, The presence of such outliers can negatively affect model accuracy and generalizability.
+
+
+\subsection{Data Reduction}
 Reduce the dimensionality of the data by removing redundant or irrelevant features. This could include dropping highly correlated variables or irrelevant fields, as well as feature selection techniques.
-
-\subsubsection{Data Transformation}
+Use AGE\_remaining instead of AGE\_current since there is a a positive correlation with price.
+\subsection{Data Transformation}
 Transform the data as needed for modeling. This may involve scaling numerical features, normalizing the data, or applying logarithmic transformations to certain attributes.
 
-\subsubsection{Data Discretization}
+\subsection{Data Discretization}
 Discuss how you discretized continuous features (if necessary), grouping them into categories or bins for better interpretability or model performance.
 
-\subsubsection{One-Hot Encoding (OHE)}
+\subsection{One-Hot Encoding (OHE)}
 Explain how you converted categorical variables into numerical format using One-Hot Encoding (OHE) to ensure the machine learning models can interpret these variables. Provide details on which categorical variables were transformed and how.
 
 % Section 3: Data Mining Methods
