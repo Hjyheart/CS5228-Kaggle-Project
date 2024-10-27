@@ -168,3 +168,7 @@ visualisations/
 .DS_Store
 extra/
 .vscode/settings.json
+
+models/
+utils/
+dataset/
