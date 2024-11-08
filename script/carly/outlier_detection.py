@@ -50,7 +50,7 @@ def identify_outliers(df: pd.DataFrame):
     plt.show()
 
     # Initialize DBSCAN to detect anomalies
-    db = DBSCAN(eps=1, min_samples=5) # 5/9
+    db = DBSCAN(eps=9, min_samples=5) # 5/9
     db.fit(df_scaled)
 
     labels = db.labels_
