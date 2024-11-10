@@ -22,7 +22,7 @@ To run Bayesian hyperparameter search for the XGBoost model, execute the followi
 
     python xgboost_params_search_and_evaluation.py
 
-### 3. Testing Alternative Models (Benchmarks)
+### 3. Model comparison
 To evaluate other models (Random Forest and Linear Regression) for comparison, use the notebook random_forest_linear_regression_and_evaluation.ipynb. This notebook includes steps to train and evaluate these models as benchmarks for model selection.
 
     jupyter notebook random_forest_linear_regression_and_evaluation.ipynb
