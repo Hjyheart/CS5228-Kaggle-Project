@@ -1,10 +1,11 @@
+import carly.dataproc
 import xgboost
 import pandas as pd
 
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import train_test_split
 
-from script import carly
+import carly
 
 def model_preprocessing(input_df):
     
@@ -22,6 +23,7 @@ def model_preprocessing(input_df):
     input_df    = carly.dataproc.FIXNULL_manufacture(df = input_df)
     input_df    = carly.dataproc.FIXNULL_ownercount(df = input_df)
     input_df    = carly.dataproc.FIXNULL_dereg(df = input_df)
+    input_df    = carly.dataproc.FIXNULL_fueltype(df = input_df)
     
     input_df    = carly.dataproc.ENCODE_category(df = input_df, drop = False)
     input_df    = carly.dataproc.ENCODE_transmission(df = input_df, drop=True)
@@ -66,8 +68,8 @@ def model_preprocessing(input_df):
 ####################### data processing ######################
 ##############################################################
 
-train_df_RAW                    = pd.read_csv(r"./data/train.csv")
-test_df_RAW                     = pd.read_csv(r"./data/test.csv")
+train_df_RAW                    = pd.read_csv(r"./dataset/train.csv")
+test_df_RAW                     = pd.read_csv(r"./dataset/test.csv")
 cat_encoding                    = True
 
 train_df                        = model_preprocessing(input_df = train_df_RAW)

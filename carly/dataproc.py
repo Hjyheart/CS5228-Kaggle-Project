@@ -1,5 +1,4 @@
-import sys
-import os
+import json
 import difflib
 import datetime
 import dateutil
@@ -46,6 +45,9 @@ from sklearn.model_selection import RandomizedSearchCV
 # accessories         - Noteworthy accessories ; free text attribute
 # indicative_price    - General guide to the price in SGD of the vehicle
 # price               - Resale price in SGD of the car
+
+with open("carly/fuel_type_map.json", "r") as f: 
+    FUEL_TYPE_DICT = json.load(f)
 
 def DEDUP_listingid(df):
     
@@ -157,6 +159,48 @@ def FIXNULL_dereg(df):
     
     df['dereg_value'] = df['dereg_value'].fillna(0)  # Replace NaN with 0
     
+    return df
+
+def FIXNULL_fueltype(df):
+    """
+    Fills missing 'fuel_type' from existing data points based on make and model.
+
+    Parameters:
+    df (pd.DataFrame): DataFrame containing 'fuel_type' column.
+
+    Returns:
+    pd.DataFrame: Updated DataFrame with filled 'fuel_type'.
+    """
+    # Extract fuel type from category
+    fuel_keywords = {
+        'electric': 'electric',
+        'hybrid': 'petrol-electric'
+    }
+
+    def extract_fuel_type(category_text):
+        category_text = category_text.lower()  
+        for keyword, fuel_type in fuel_keywords.items():
+            if keyword in category_text:
+                return fuel_type
+        return None
+    
+    df['fuel_type_category_fill'] = df['fuel_type']
+
+    df.loc[df['fuel_type'].isna(), 'fuel_type_category_fill'] = df['category'].apply(extract_fuel_type)
+
+    # Define a function to fill missing fuel types
+    def fill_fuel_type(row):
+        if pd.isna(row['fuel_type']):
+            return FUEL_TYPE_DICT.get(f"{row['make']}_{row['model']}", None)
+        return row['fuel_type']
+
+    # Apply the function to fill in missing values
+    df['fuel_type_model_make_fill'] = df['fuel_type']
+    df.loc[df['fuel_type'].isna(), 'fuel_type_model_make_fill']  = df.apply(fill_fuel_type, axis=1)
+
+    df['fuel_type'] = df['fuel_type_model_make_fill']
+    df = df.drop(columns=['fuel_type_model_make_fill', 'fuel_type_category_fill'])
+
     return df
 
 def ENCODE_category(df, drop=True):
