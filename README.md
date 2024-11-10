@@ -16,9 +16,9 @@ To train the model and generate the CSV submission file:
 python main.py
 ```
 
-### 2. Hyperparameter Tuning for XGBoost
+### 2. Hyperparameter Tuning for XGBoost + Model Evaluation
 
-To run Bayesian hyperparameter search for the XGBoost model, execute the following script:
+To run Bayesian hyperparameter search for the XGBoost model, execute the following script. The script also generates charts for feature importance and error analysis.
 
     python xgboost_params_search_and_evaluation.py
 
