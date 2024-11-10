@@ -250,23 +250,47 @@ param_dist = {
             'min_child_weight'  : (3, 88),   
             }
 
+xgb_model = xgboost.XGBRegressor(random_state = 888888,
+                                 n_jobs = -1)
 
-name = "best-params"
+# Create the RandomizedSearchCV object
+random_search = BayesSearchCV(xgb_model,
+                                   search_spaces  = param_dist,
+                                   n_iter               = 88,
+                                   cv                   = 5,
+                                   random_state         = 888888,
+                                   scoring              = 'neg_root_mean_squared_error',
+                                  )
+# Fit the RandomizedSearchCV object to the training data
+random_search.fit(train_df_base[ENCODED_feature_list], train_df_base[target],
+                 eval_set=[(train_df_eval[ENCODED_feature_list], train_df_eval[target],)], verbose = False)
 
-best_params ={'alpha': 0.07272769267361982,
-             'colsample_bytree': 0.5004695925119211,
-             'early_stopping_rounds': 18,
-             'gamma': 0.33307638017245794,
-             'learning_rate': 0.014079290196807495,
-             'max_depth': 52,
-             'min_child_weight': 10,
-             'n_estimators': 1123,
-             'subsample': 0.575409364755193}
+ENCODED_random_search_df = pd.DataFrame(random_search.cv_results_)
+ENCODED_random_search_df = ENCODED_random_search_df[[ 'params',
+                                     'split0_test_score',
+                                     'split1_test_score',
+                                     'split2_test_score',
+                                     'split3_test_score',
+                                     'split4_test_score',
+                                     'mean_test_score',
+                                     'std_test_score',
+                                     'rank_test_score']]
+
+ENCODED_random_search_df['objfunc'] = ENCODED_random_search_df[['split0_test_score',
+                                                'split1_test_score',
+                                                'split2_test_score',
+                                                'split3_test_score',
+                                                'split4_test_score',]].median(axis=1)
+ENCODED_random_search_df = ENCODED_random_search_df.sort_values('objfunc', ascending = False)
+ENCODED_random_search_df.head()
+
+
+name = "bayesian-search"
 
 ####################### model training (USING ENCODED FEATURES) ######################
 #############################################################
 
-# best_params = ENCODED_random_search_df['params'].iloc[0]
+best_params = ENCODED_random_search_df['params'].iloc[0]
 
 ENCODED_xbg_model = xgboost.XGBRegressor(random_state           = 888888,
                                          n_estimators           = best_params['n_estimators'],
@@ -300,7 +324,7 @@ submission_df = pd.DataFrame(ENCODED_xbg_model.predict(test_df[ENCODED_feature_l
 submission_df['Predicted'] = round(submission_df['Predicted'])
 submission_df.to_csv(f"./dataset/submission-{name}.csv", index = False)
 
-with open('model.pkl','wb') as f:
+with open(f'model-{name}.pkl','wb') as f:
     pickle.dump(ENCODED_xbg_model,f)
 
 
@@ -375,4 +399,13 @@ plt.legend()
 plt.show()
 
 
+# best_params ={'alpha': 0.07272769267361982,
+#              'colsample_bytree': 0.5004695925119211,
+#              'early_stopping_rounds': 18,
+#              'gamma': 0.33307638017245794,
+#              'learning_rate': 0.014079290196807495,
+#              'max_depth': 52,
+#              'min_child_weight': 10,
+#              'n_estimators': 1123,
+#              'subsample': 0.575409364755193}
 
