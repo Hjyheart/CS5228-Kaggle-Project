@@ -1,4 +1,3 @@
-import carly.dataproc
 import xgboost
 import pandas as pd
 
@@ -65,6 +64,7 @@ def model_preprocessing(input_df):
     
     return input_df
 
+
 ####################### data processing ######################
 ##############################################################
 
@@ -75,6 +75,11 @@ cat_encoding                    = True
 train_df                        = model_preprocessing(input_df = train_df_RAW)
 train_df_base, train_df_eval    = train_test_split(train_df, test_size=0.2, random_state=888888)
 test_df                         = model_preprocessing(input_df = test_df_RAW)
+
+# ### Remove outliers from training dataset
+train_df        = train_df.loc[~(train_df['AGE-remaining']<0) | ~(train_df['AGE-currentREG']<0)]
+outlier_df      = carly.outlier_detection.identify_outliers(df=train_df)
+train_df        = outlier_df.loc[(outlier_df['cluster']!=-1) & (outlier_df['CAT-rare&exotic']!=1)].drop(columns=['cluster'])
 
 if cat_encoding == False:
     feature_list        = carly.params.CAT_feature_list
@@ -90,19 +95,18 @@ elif cat_encoding == True:
 
 ####################### model training  ####################################
 ############################################################################
-# Use the best_params from main-bayesian
+# Use the best_params from xgboost_params_search_and_evaluation
 best_params ={
-    'alpha': 0.07272769267361982,
-    'colsample_bytree': 0.5004695925119211,
-    'early_stopping_rounds': 18,
-    'gamma': 0.33307638017245794,
-    'learning_rate': 0.014079290196807495,
-    'max_depth': 52,
-    'min_child_weight': 10,
-    'n_estimators': 1123,
-    'subsample': 0.575409364755193
-}
-
+            'alpha'                 : 0.07272769267361982,
+            'colsample_bytree'      : 0.5004695925119211,
+            'early_stopping_rounds' : 18,
+            'gamma'                 : 0.33307638017245794,
+            'learning_rate'         : 0.014079290196807495,
+            'max_depth'             : 52,
+            'min_child_weight'      : 10,
+            'n_estimators'          : 1123,
+            'subsample'             : 0.575409364755193
+            }
 
 xbg_model = xgboost.XGBRegressor(random_state           = 888888,
                                  n_estimators           = best_params['n_estimators'],
